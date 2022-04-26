@@ -1,0 +1,82 @@
+using UnityEngine;
+using UnityEngine.Events;
+using Valve.VR;
+using System.Collections;
+using System;
+public class VRInput : MonoBehaviour
+{
+    public SteamVR_Behaviour_Pose pose;
+    public SteamVR_Action_Boolean teleport = SteamVR_Input.GetBooleanAction("InteractUI");
+    public GameObject rightcolloer;
+    public GameObject walls;
+    public UnityEvent mOnClick = null;
+    public string LoadsceneName;
+    bool t = false;
+
+    public GameObject BlueBlock;
+
+    public float TotalTime = 10.0f;
+
+    void Update()
+    {
+        if (teleport.GetStateDown(pose.inputSource))
+        {
+            if (mOnClick != null) mOnClick.Invoke();
+        }
+    }
+
+    public void rewardposition()    //按键事件
+    {
+        Debug.LogError("1");
+        t = !t;
+        if (t == true)
+        {
+            StartCoroutine(startTime());
+        }
+    }
+
+    public IEnumerator startTime()
+    {
+        var positions = new float[50 * 3];
+        int i = 0;
+        while (TotalTime >= 0 && t == true)
+        {
+            Debug.Log(TotalTime);
+            yield return new WaitForSeconds(0.5f);     //0.5秒计时
+            TotalTime -= 0.5f;
+            positions[i * 3] = rightcolloer.transform.position[0];  //记录位置
+            positions[i * 3 + 1] = 0;
+            positions[i * 3 + 2] = rightcolloer.transform.position[2];
+            i++;
+        }
+
+        if (TotalTime <= 0 || t == false)
+        {
+            for (int j = 0; j < i * 3 - 3; j += 3)
+            {
+                double sqrt = System.Math.Sqrt(System.Math.Pow(positions[j] - positions[j + 3], 2) + System.Math.Pow((positions[j + 2] - positions[j + 5]), 2));
+                sqrt = System.Math.Abs(sqrt);
+                double tanvalue = (positions[j + 3] - positions[j]) / (positions[j + 5] - positions[j + 2]);
+                double tanRadianValue2 = Math.Atan(tanvalue);             //求弧度值
+                double tanAngleValue2 = (tanRadianValue2 / Math.PI * 180)+90;
+                GameObject cube = GameObject.Instantiate(BlueBlock, new Vector3((positions[j] + positions[j + 3]) / 2, 1.5f, (positions[j + 2] + positions[j + 5]) / 2), Quaternion.Euler(0.0f, (float)tanAngleValue2, 90.0f), walls.transform);
+                cube.transform.localScale = new Vector3(3, (float)sqrt, 0.01f);
+            }
+            double sqrt1 = System.Math.Sqrt(System.Math.Pow(positions[0] - positions[i * 3 - 3], 2) + System.Math.Pow((positions[2] - positions[i * 3 - 1]), 2));
+            sqrt1 = System.Math.Abs(sqrt1);
+            double tanvalue1 = (positions[0] - positions[i * 3 - 3]) / (positions[2] - positions[i * 3 - 1]);
+            double tanRadianValue21 = Math.Atan(tanvalue1);             //求弧度值
+            double tanAngleValue21 = (tanRadianValue21 / Math.PI * 180) + 90;
+            GameObject cube1 = GameObject.Instantiate(BlueBlock, new Vector3((positions[0] + positions[i * 3 - 3]) / 2, 1.5f, (positions[2] + positions[i * 3 - 1]) / 2), Quaternion.Euler(0.0f, (float)tanAngleValue21, 90.0f), walls.transform);
+            cube1.transform.localScale = new Vector3(3, (float)sqrt1, 0.01f);
+            LoadScene();
+        }
+    }
+
+
+
+    void LoadScene()
+    {
+        Application.LoadLevel(LoadsceneName);
+    }
+}
